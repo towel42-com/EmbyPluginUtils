@@ -100,7 +100,7 @@ if "%TARGET_PATH%"=="" (
 
 :: echo "TargetPath Set"
 if not exist "%TARGET_PATH%" (
-    echo [ERROR] TargetPath '%TARGET_PATH% does not exist
+    echo [ERROR] TargetPath '%TARGET_PATH%' does not exist
     call :usage
     exit /b 3
 )
@@ -170,7 +170,6 @@ if "%BUILD_MODE%"=="true" if not exist "%EMBY_ROOT_DIR%\programdata\plugins\." (
 )
 
 :: kill current processes
-
 :kill_processes
 tasklist /NH /FI "imagename eq %EMBY_SERVER%" 2>nul | find /i "%EMBY_SERVER%" >nul
 
@@ -195,9 +194,21 @@ copy /y "%TARGET_PATH%" "%EMBY_ROOT_DIR%\programdata\plugins"
 
 :launch_emby
 :: launch emby Server
+
+set "PWSH=%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe"
 if /I not "%DEBUG_MODE%"=="false" (
+    if not exist "%PWSH%" (
+        echo [ERROR] PowerShell '%PWSH%' does not exist
+        call :usage
+        exit /b 12
+    )
+
     echo Launching %EMBY_ROOT_DIR%\system\%EMBY_SERVER%
-    for /f %%A in ('%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh -WorkingDirectory "%EMBY_ROOT_DIR%\system" -Command "(Start-Process "%EMBY_ROOT_DIR%\system\%EMBY_SERVER%" -PassThru).Id"') do echo "Emby Process ID: %%A"
+    set "PROCESS_ID="
+    
+    for /f %%A in ('%PWSH% -WorkingDirectory "%EMBY_ROOT_DIR%\system" -Command "(Start-Process "%EMBY_ROOT_DIR%\system\%EMBY_SERVER%" -PassThru).Id"') do set "PROCESS_ID=%%A"
+
+    echo EmbyServer ProcessID = !PROCESS_ID!
     call timeout /t 5
 )
 
